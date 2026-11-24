@@ -4,14 +4,21 @@ use Razorpay\Api\Api;
 
 include('../config/db_connection.php');
 
-$api = new Api('rzp_test_MCCHlSWeh3mRj4', 'hTSHYNC8Cm084lPqg9AdejH7');
+$keyId = getenv('RAZORPAY_KEY_ID');
+$keySecret = getenv('RAZORPAY_KEY_SECRET');
+if (!$keyId || !$keySecret) {
+    http_response_code(503);
+    echo json_encode(['error' => 'Payment service unavailable']);
+    exit;
+}
+$api = new Api($keyId, $keySecret);
 
 $data = json_decode(file_get_contents('php://input'), true);
 
 $pg_id = intval($data['pg_id']);
 $duration = intval($data['duration']);
 
-if (!$pg_id || !$duration) {
+if ($pg_id <= 0 || $duration <= 0) {
     echo json_encode(['error' => 'Invalid PG ID or duration']);
     exit;
 }
@@ -51,7 +58,7 @@ try {
         'amount' => $total_amount
     ]);
 } catch (Exception $e) {
-    echo json_encode(['error' => 'Payment gateway error: ' . $e->getMessage()]);
+    echo json_encode(['error' => 'Payment gateway error']);
 }
 
 // Close connection
